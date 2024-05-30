@@ -50,6 +50,7 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
+    console.log("Token:", this.props.token);
     fetch("http://localhost:8080/feed/posts?page=" + page, {
       headers: {
         Authorization: "Bearer " + this.props.token,
@@ -154,8 +155,8 @@ class Feed extends Component {
               (p) => p._id === prevState.editPost._id
             );
             updatedPosts[postIndex] = post;
-          } else if (prevState.posts.length < 2) {
-            updatedPosts = prevState.posts.concat(post);
+          } else {
+            updatedPosts.push(post);
           }
           return {
             posts: updatedPosts,
@@ -265,7 +266,7 @@ class Feed extends Component {
                 <Post
                   key={post._id}
                   id={post._id}
-                  author={post.creator.name}
+                  author={post.creator ? post.creator.name : "Anonymous"}
                   date={new Date(post.createdAt).toLocaleDateString("en-US")}
                   title={post.title}
                   image={post.imageUrl}
