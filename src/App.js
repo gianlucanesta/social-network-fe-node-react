@@ -136,8 +136,8 @@ class App extends Component {
       })
       .then((resData) => {
         console.log(resData);
-        this.setState({ isAuth: true, authLoading: false }); // Corretto `isAuth: true`
-        this.props.history.replace("/");
+        this.setState({ authLoading: false }); // Non impostiamo `isAuth` a `true` qui
+        this.props.history.replace("/login"); // Reindirizza alla pagina di login
       })
       .catch((err) => {
         console.log(err);
