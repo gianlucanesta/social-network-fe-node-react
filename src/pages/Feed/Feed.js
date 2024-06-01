@@ -42,9 +42,10 @@ class Feed extends Component {
     this.loadPosts();
 
     const socket = openSocket("http://localhost:8080");
-    socket.emit("setup", this.props.token);
-    socket.on("updatedPosts", () => {
-      this.loadPosts();
+    socket.on("posts", (data) => {
+      if (data.action === "create") {
+        this.addPost(data.post);
+      }
     });
   }
 
@@ -75,7 +76,7 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    console.log("Token:", this.props.token);
+    // console.log("Token:", this.props.token);
     fetch("http://localhost:8080/feed/posts?page=" + page, {
       headers: {
         Authorization: "Bearer " + this.props.token,
@@ -187,8 +188,6 @@ class Feed extends Component {
               (p) => p._id === prevState.editPost._id
             );
             updatedPosts[postIndex] = post;
-          } else {
-            updatedPosts.push(post);
           }
           return {
             posts: updatedPosts,
