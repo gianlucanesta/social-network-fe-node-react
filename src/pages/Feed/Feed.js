@@ -54,10 +54,32 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
+    const graphqlQuery = {
+      query: `
+        {
+          posts {
+            posts {
+              _id
+              title
+              content
+              imageUrl
+              creator {
+                name
+              }
+              createdAt
+            }
+            totalPosts
+          }
+        }
+      `,
+    };
     // console.log("Token:", this.props.token);
-    fetch("http://localhost:8080/feed/posts?page=" + page, {
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
+      body: JSON.stringify(graphqlQuery),
       headers: {
         Authorization: "Bearer " + this.props.token,
+        "Content-Type": "application/json",
       },
     })
       .then((res) => {
@@ -67,16 +89,20 @@ class Feed extends Component {
         return res.json();
       })
       .then((resData) => {
-        this.setState({
-          posts: resData.posts.map((post) => {
-            return {
-              ...post,
-              imagePath: post.imageUrl,
-            };
-          }),
-          totalPosts: resData.totalItems,
-          postsLoading: false,
-        });
+        console.log(resData);
+        const postsData = resData.data.posts;
+        if (postsData) {
+          this.setState({
+            posts: postsData.posts.map((post) => {
+              return {
+                ...post,
+                imagePath: post.imageUrl,
+              };
+            }),
+            totalPosts: postsData.totalPosts,
+            postsLoading: false,
+          });
+        }
       })
       .catch(this.catchError);
   };
@@ -176,7 +202,18 @@ class Feed extends Component {
         };
         console.log("Created post", post);
         this.setState((prevState) => {
+          let updatedPosts = [...prevState.posts];
+          if (prevState.editPost) {
+            const postIndex = updatedPosts.findIndex(
+              (p) => p._id === prevState.editPost._id
+            );
+            updatedPosts[postIndex] = post;
+          } else {
+            // updatedPosts = [...updatedPosts, post];
+            updatedPosts.unshift(post);
+          }
           return {
+            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false,
