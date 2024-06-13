@@ -65,8 +65,8 @@ class Feed extends Component {
     }
     const graphqlQuery = {
       query: `
-        {
-          posts(page: ${page}) {
+        query FetchPosts($page: Int!) {
+          posts(page: $page) {
             posts {
               _id
               title
@@ -81,6 +81,9 @@ class Feed extends Component {
           }
         }
       `,
+      variables: {
+        page: page,
+      },
     };
     // console.log("Token:", this.props.token);
     fetch("http://localhost:8080/graphql", {
@@ -120,12 +123,15 @@ class Feed extends Component {
     event.preventDefault();
     const graphqlQuery = {
       query: `
-        mutation {
-          updateStatus(status: "${this.state.status}") {
+        mutation UpdateUserStatus($userStatus: String!) {
+          updateStatus(status: $userStatus) {
             status
           }
         }
       `,
+      variables: {
+        userStatus: this.state.status,
+      },
     };
     fetch("http://localhost:8080/graphql", {
       method: "POST",
@@ -187,17 +193,11 @@ class Feed extends Component {
       .then((res) => res.json())
       .then((fileResData) => {
         console.log(fileResData);
-        const imageUrl = fileResData.filePath;
+        const imageUrl = fileResData.filePath || "undefined";
         let graphqlQuery = {
           query: `
-            mutation {
-              createPost(postInput: {title: "${postData.title
-                .replace(/\\/g, "\\\\")
-                .replace(/"/g, '\\"')}", content: "${postData.content
-            .replace(/\\/g, "\\\\")
-            .replace(/"/g, '\\"')}", imageUrl: "${imageUrl
-            .replace(/\\/g, "\\\\")
-            .replace(/"/g, '\\"')}"}) {
+            mutation CreatePost($title: String!, $content: String!, $imageUrl: String!) {
+              createPost(postInput: {title: $title, content: $content, imageUrl: $imageUrl}) {
                 _id
                 title
                 content
@@ -209,33 +209,36 @@ class Feed extends Component {
               }
             }
           `,
+          variables: {
+            title: postData.title,
+            content: postData.content,
+            imageUrl: imageUrl,
+          },
         };
         console.log("token", this.props.token);
 
         if (this.state.editPost) {
           graphqlQuery = {
             query: `
-              mutation {
-                updatePost(id: "${
-                  this.state.editPost._id
-                }", postInput: {title: "${postData.title
-              .replace(/\\/g, "\\\\")
-              .replace(/"/g, '\\"')}", content: "${postData.content
-              .replace(/\\/g, "\\\\")
-              .replace(/"/g, '\\"')}", imageUrl: "${imageUrl
-              .replace(/\\/g, "\\\\")
-              .replace(/"/g, '\\"')}"}) {
-                    _id
-                    title
-                    content
-                    imageUrl
-                    creator {
-                      name
-                    }
-                    createdAt
-                  }
+            mutation UpdateExistingPost($postId: ID!, $title: String!, $content: String!, $imageUrl: String!) {
+              updatePost(id: $postId, postInput: { title: $title, content: $content, imageUrl: $imageUrl }) {
+                _id
+                title
+                content
+                imageUrl
+                creator {
+                  name
                 }
-              `,
+                createdAt
+              }
+            }
+          `,
+            variables: {
+              title: postData.title,
+              content: postData.content,
+              postId: this.state.editPost._id,
+              imageUrl: imageUrl,
+            },
           };
         }
 
